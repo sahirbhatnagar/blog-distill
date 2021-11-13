@@ -1,0 +1,14 @@
+name: "blog"
+title: "sahir's blog"
+description: |
+  sahir's blog
+base_url: https://sahirbhatnagar.github.io/blog/
+output_dir: "." # root of master branch. need to manually configure this in github settings
+navbar:
+  right:
+    - text: "Home"
+      href: index.html
+    - text: "About"
+      href: about.html
+output: distill::distill_article
+theme: tidymodelstheme.css

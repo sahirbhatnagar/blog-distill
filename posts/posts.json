@@ -1,0 +1,38 @@
+[
+  {
+    "path": "posts/2021-11-12-cv-errors/",
+    "title": "cv-errors",
+    "description": "A short description of the post.",
+    "author": [
+      {
+        "name": "Sahir Bhatnagar",
+        "url": "https://sahirbhatnagar.com/blog"
+      }
+    ],
+    "date": "2021-11-12",
+    "categories": [],
+    "contents": "\nSimulation function – response is a quadratic function of continuous predictor\n\n\n\nFit once to see what the resulting predicted curve looks like\n\n\n   COPD control \n    209     291 \n\nCall:\nglm(formula = y ~ x + I(x^2), family = binomial, data = example_data)\n\nDeviance Residuals: \n    Min       1Q   Median       3Q      Max  \n-2.0555  -0.8862  -0.8084   1.2208   1.6041  \n\nCoefficients:\n            Estimate Std. Error z value Pr(>|z|)    \n(Intercept)  -0.9058     0.1255  -7.217 5.30e-13 ***\nx             0.3904     0.1118   3.491 0.000482 ***\nI(x^2)        0.6619     0.1009   6.558 5.45e-11 ***\n---\nSignif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\n(Dispersion parameter for binomial family taken to be 1)\n\n    Null deviance: 679.64  on 499  degrees of freedom\nResidual deviance: 609.91  on 497  degrees of freedom\nAIC: 615.91\n\nNumber of Fisher Scoring iterations: 4\n\n\nRun cross-validation experiment once\n\n\n\n\nPPV\nNPV\nMacro\nSE2_Macro\nResample\n0.7307692\n0.6891892\n0.7099792\n0.0026155\nFold1\n0.5000000\n0.6000000\n0.5500000\n0.0038750\nFold2\n0.5652174\n0.6282051\n0.5967113\n0.0034198\nFold3\n0.8400000\n0.7297297\n0.7848649\n0.0020103\nFold4\n0.5909091\n0.6282051\n0.6095571\n0.0034956\nFold5\n\nRun CV experiment many times\n\n\nset.seed(42)\nn.samples <- 400 # number of replications\n\n# sample size\nN <- 500\n\n# folds \nK <- 5\n\n# repeat experiment several times\nres.list <- replicate(n.samples, expr = {\n\n  # simulate data\n  df <- sim_quadratic_logistic_data(sample_size = N)\n  \n  # fit the model with cross-validated metrics\n  fit <- caret::train(y.factor ~ x + I(x^2),\n                      data = df,\n                      method = \"glm\",\n                      family = \"binomial\",\n                      trControl = trainControl(method = \"cv\",\n                                               number = K,\n                                               savePredictions = TRUE,\n                                               summaryFunction = MySummary,\n                                               classProbs = TRUE))\n  data.frame(\n    SE_pbar = (1/K)*sqrt(mean(fit$resample$SE2_Macro)), # model based (what the reviewer suggested)\n    SEM = sd(fit$resample$Macro) / sqrt(K), # what we did aka the Standard error of the mean\n    corr_ppv_npv = cor(fit$resample$PPV, fit$resample$NPV)\n  )\n\n}, simplify = FALSE)\n\n\nres <- do.call(rbind, res.list) %>% \n  mutate(replicate = 1:n())\n\nhist(res$corr_ppv_npv, \n     col = \"lightblue\", \n     xlab = \"corr(PPV, NPV)\",\n     main = sprintf(\"Average correlation(PPV, NPV) over %i samples = %0.2f\",n.samples, mean(res$corr_ppv_npv)))\n\n\n\nres %>% \n  dplyr::select(replicate, SE_pbar, SEM) %>% \n  tidyr::pivot_longer(cols = -1, names_to = \"SE_type\") %>% \n  ggplot(aes(x = SE_type, y = value)) + geom_boxplot() + \n  labs(title = \"Distribution of standard errors for SEM vs. Average of \\nK fold model based variances over many replications\")\n\n\n\nboxplot(res$SEM / res$SE_pbar, main = \"Ratio of SEM to SE_pbar\")\n\n\n\n\nRun CV Experiment over increasing K and N\n\n\nset.seed(42)\nn.samples <- 500  # number of replications\n\nlibrary(purrr)\n\n\ncv_fun <- function(N, K){\n  # repeat experiment several times\n  res.list <- replicate(n.samples, expr = {\n    \n    # simulate data\n    df <- sim_quadratic_logistic_data(sample_size = N)\n    \n    # fit the model with cross-validated metrics\n    fit <- caret::train(y.factor ~ x + I(x^2),\n                        data = df,\n                        method = \"glm\",\n                        family = \"binomial\",\n                        trControl = trainControl(method = \"cv\",\n                                                 number = K,\n                                                 savePredictions = TRUE,\n                                                 summaryFunction = MySummary,\n                                                 classProbs = TRUE))\n    data.frame(\n      N = N,\n      K = K,\n      SE_pbar = sqrt((1/K)*mean(fit$resample$SE2_Macro)), # model based (what the reviewer suggested)\n      SEM = sd(fit$resample$Macro) / sqrt(K), # what we did aka the Standard error of the mean\n      corr_ppv_npv = cor(fit$resample$PPV, fit$resample$NPV)\n    )\n    \n  }, simplify = FALSE)\n  \n  do.call(rbind, res.list) %>% \n    mutate(replicate = 1:n())\n}\n\n\nparams <- expand.grid(N = c(100, 250, 500, 1000, 5000),\n                      K = c(5, 10, 20))\n\ntt <- map2_dfr(.x = params$N, \n               .y = params$K, \n               .f = cv_fun)\n\n\n\n\n\n\n\n\n\n",
+    "preview": "posts/2021-11-12-cv-errors/cv-errors_files/figure-html5/unnamed-chunk-2-1.png",
+    "last_modified": "2021-11-13T00:03:44-05:00",
+    "input_file": {},
+    "preview_width": 1248,
+    "preview_height": 768
+  },
+  {
+    "path": "posts/welcome/",
+    "title": "Welcome to sahir's blog",
+    "description": "Welcome to our new blog, sahir's blog. We hope you enjoy \nreading what we have to say!",
+    "author": [
+      {
+        "name": "Nora Jones",
+        "url": "https://example.com/norajones"
+      }
+    ],
+    "date": "2021-11-12",
+    "categories": [],
+    "contents": "\n\n\n\n",
+    "preview": {},
+    "last_modified": "2021-11-12T19:44:50-05:00",
+    "input_file": {}
+  }
+]
